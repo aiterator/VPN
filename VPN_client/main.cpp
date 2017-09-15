@@ -11,13 +11,40 @@
 #include <cstring>
 #include <sys/ioctl.h>
 #include <unistd.h>
+#include <tins/tins.h>
+#include <iostream>
 
-const int BUF_SIZE = 4096;
-const char serverIp[20] = "101.254.136.59";
+using namespace Tins;
+using namespace std;
 
-void Send_udp(char *buf, int len)
+//bool handler(const PDU &pdu)
+//{
+//    const IP &ip = pdu.rfind_pdu<IP>();
+//    const TCP &tcp = pdu.rfind_pdu<TCP>();
+//    std::cout << ip.src_addr() << ':' << tcp.sport() << " -> "
+//              << ip.dst_addr() << ':' << tcp.dport() << std::endl;
+//    return true;
+//}
+
+void upDevice(const char* device_name)
 {
-    return ;
+    char buf[207];
+    sprintf(buf, "sudo ip link set %s up", device_name);
+    system(buf);
+}
+
+void downDevice(const char* device_name)
+{
+    char buf[207];
+    sprintf(buf, "sudo ip link set %s down", device_name);
+    system(buf);
+}
+
+void addRoute(const char* device_name, const char* ip_route)
+{
+    char buf[207];
+    sprintf(buf, "sudo ip route add %s dev %s", ip_route, device_name);
+    system(buf);
 }
 
 int main()
@@ -40,19 +67,9 @@ int main()
     }
 
     printf("ifname is %s\n", ifr.ifr_name);
+    upDevice(ifr.ifr_name);
+    addRoute(ifr.ifr_name, "123.123.123.123");
 
-
-    int n;
-    char buf[BUF_SIZE];
-
-    while(true)
-    {
-        if((n = read(fd, buf, BUF_SIZE)) == -1)
-        {
-            perror("read");
-            exit(errno);
-        }
-
-        Send_udp(buf, n);
-    }
+//    int n;
+//    cin >> n;
 }
