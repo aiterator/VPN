@@ -40,16 +40,21 @@ WrapperUdp::WrapperUdp(const char *ip, uint16_t port) {
     client.sin_family = AF_INET;
 }
 
-void WrapperUdp::sentMsg(const char* msg, int len)
+size_t WrapperUdp::sentMsg(const char* msg, int len)
 {
-    if(sendto(sockfd, msg, len, 0, (struct sockaddr *)&client, sizeof(client)) == -1)
-        perror("sendto");
+    return sendto(sockfd, msg, len, 0, (struct sockaddr *)&client, sizeof(client));
 }
 
-void WrapperUdp::sentMsg(std::string& msg)
+size_t WrapperUdp::sentMsg(std::string& msg)
 {
-    if(sendto(sockfd, msg.data(), msg.size(), 0, (struct sockaddr *)&client, sizeof(client)) == -1)
-        perror("sendto");
+    return sendto(sockfd, msg.data(), msg.size(), 0, (struct sockaddr *)&client, sizeof(client));
+}
+
+ssize_t WrapperUdp::readMsg(char* buf, int BUF_SIZE)
+{
+    socklen_t server_length = sizeof(server);
+    ssize_t read_bytes = recvfrom(sockfd, buf, BUF_SIZE, 0, (struct sockaddr *)&server, &server_length);
+    return read_bytes;
 }
 
 int WrapperUdp::getFd()

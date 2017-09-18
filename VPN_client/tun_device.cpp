@@ -27,7 +27,7 @@ TunDecive::TunDecive()
 void TunDecive::up()
 {
     char buf[207];
-    sprintf(buf, "sudo ip link set %s up", ifr.ifr_name);
+    sprintf(buf, "ip link set %s up", ifr.ifr_name);
     system(buf);
 
     printf("tunDevice %s open\n", ifr.ifr_name);
@@ -36,7 +36,7 @@ void TunDecive::up()
 void TunDecive::down()
 {
     char buf[207];
-    sprintf(buf, "sudo ip link set %s down", ifr.ifr_name);
+    sprintf(buf, "ip link set %s down", ifr.ifr_name);
     system(buf);
 
     printf("tunDevice %s down\n", ifr.ifr_name);
@@ -45,13 +45,20 @@ void TunDecive::down()
 void TunDecive::addRoute(const char *route)
 {
     char buf[207];
-    sprintf(buf, "sudo ip route add %s dev %s", route, ifr.ifr_name);
+    sprintf(buf, "ip route add %s dev %s", route, ifr.ifr_name);
     system(buf);
 }
 
-char* TunDecive::name()
+size_t TunDecive::readMsg(char *buf, int BUF_SIZE)
 {
-    return ifr.ifr_name;
+    size_t read_bytes = read(fd, buf, BUF_SIZE);
+    return read_bytes;
+}
+
+size_t TunDecive::sendMsg(char *buf, int len)
+{
+    size_t write_bytes = write(fd, buf, len);
+    return write_bytes;
 }
 
 int TunDecive::getFd()

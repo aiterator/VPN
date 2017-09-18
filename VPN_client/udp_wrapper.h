@@ -20,13 +20,14 @@ public:
     WrapperUdp(const char* ip, const char* port);
     WrapperUdp(const char* ip, uint16_t port);
 
-    void sentMsg(const char* msg, int len);
-    void sentMsg(std::string& msg);
+    size_t sentMsg(const char* msg, int len);
+    size_t sentMsg(std::string& msg);
+    ssize_t readMsg(char* buf, int BUF_SIZE);
     int getFd();
 
 private:
     int sockfd; //文件描述符；
-    struct sockaddr_in client;
+    struct sockaddr_in client, server;
 };
 
 #endif //VPN_UDP_WRAPPER_H
