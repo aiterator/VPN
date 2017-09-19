@@ -13,7 +13,7 @@ using namespace std;
 const int  TUN0 = 0;
 const int UDP0 = 1;
 const int EVENT_SIZE = 107;
-const int BUF_SIZE = 100007;
+const int BUF_SIZE = 100000;
 
 struct markMsg
 {
@@ -38,12 +38,6 @@ void epollAdd(int epollFd, int sockFd, int mk, uint32_t status)
 
 int main(int argc, char *argv[])
 {
-    if(argc < 3)
-    {
-        printf("usage: %s <vpnServerIp> <vpnServerPort>\n", argv[0]);
-        //return 0;
-    }
-
     TunDecive tun0;
     tun0.up();
     tun0.addRoute("10.0.0.122");
@@ -94,7 +88,7 @@ int main(int argc, char *argv[])
                     continue;
                 }
 
-                if(tun0.sendMsg(buf, read_bytes) < = 0)
+                if(tun0.sendMsg(buf, read_bytes) <= 0)
                 {
                     perror("read");
                     continue;
