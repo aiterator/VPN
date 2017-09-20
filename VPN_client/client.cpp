@@ -10,7 +10,7 @@
 using namespace Tins;
 using namespace std;
 
-const int  TUN0 = 0;
+const int TUN0 = 0;
 const int UDP0 = 1;
 const int EVENT_SIZE = 107;
 const int BUF_SIZE = 100000;
