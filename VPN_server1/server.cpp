@@ -68,25 +68,6 @@ int udpServerInit()
     return udp_socket;
 }
 
-
-
-bool handle(PDU &some_pdu)
-{
-    IP &ip = some_pdu.rfind_pdu<IP>();
-    TCP &tcp = some_pdu.rfind_pdu<TCP>();
-
-    uint16_t port = tcp.dport();
-    string d_addr = serverPort_Mp_clientIpPort[port];
-    ip.dst_addr(IPv4Address(d_addr.data()));
-
-    WrapperUdp udp(d_addr.data(), port);
-    auto buf = ip.serialize();
-    if(udp.sentMsg((char *)buf.data(), buf.size()) <= 0)
-        perror("udp.sendMsg");
-
-    return false;
-}
-
 int main()
 {
     int epollFd = epoll_create1(0);
@@ -100,7 +81,7 @@ int main()
 
     SnifferConfiguration config;
     config.set_filter("ip dst 115.159.146.17");
-    Sniffer sniffer("etho", config);
+    Sniffer sniffer("eth0", config);
     int sniffer_fd = sniffer.get_fd();
     epollAdd(epollFd, sniffer_fd, SNIFFER_FD, EPOLLIN);
 
@@ -141,13 +122,43 @@ int main()
                 }
 
                 serverPort_Mp_clientIpPort[udp_client.sin_port] = ip_package.src_addr().to_string();
-
                 ip_package.src_addr(IPv4Address(IP_LOCAL));
+
+                cout << ip_package.src_addr().to_string() << " " << ip_package.dst_addr().to_string() << endl;
+
                 sender.send(ip_package);
             }
             else
             {
-                sniffer.sniff_loop(handle);
+                read_bytes = recvfrom(fd, buf, BUF_SIZE, 0, (struct sockaddr *)&udp_client, &clientLen);
+                if(read_bytes < 0)
+                {
+                    perror("recvfrom");
+                    continue;
+                }
+
+                IP ip_package;
+                try
+                {
+                    ip_package = RawPDU((uint8_t*)buf, read_bytes).to<IP>();
+                }
+                catch (...)
+                {
+                    continue;
+                }
+
+                TCP *tcp_package = ip_package.inner_pdu()->find_pdu<TCP>();
+                uint16_t port = tcp_package->dport();
+
+                string d_addr = serverPort_Mp_clientIpPort[port];
+                ip_package.dst_addr(IPv4Address(d_addr.data()));
+
+                WrapperUdp udp(d_addr.data(), port);
+                auto buf = ip_package.serialize();
+                if(udp.sentMsg((char *)buf.data(), buf.size()) <= 0)
+                    perror("udp.sendMsg");
+
+                printf("handle %d\n", buf.size());
             }
         }
     }

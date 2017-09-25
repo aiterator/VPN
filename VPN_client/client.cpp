@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
 {
     TunDecive tun0;
     tun0.up();
-    tun0.addRoute("10.0.0.122");
+    tun0.addRoute("36.99.18.132");
 
     WrapperUdp udp(argv[1], argv[2]);
 
@@ -73,13 +73,14 @@ int main(int argc, char *argv[])
                     perror("tun0.readMsg");
                     continue;
                 }
+                printf("tun0 %d\n", read_bytes);
 
                 if(udp.sentMsg(buf, read_bytes) <= 0)
                 {
                     perror("udp.sendMsg");
                     continue;
                 }
-            }
+           }
             else
             {
                 if((read_bytes = udp.readMsg(buf, BUF_SIZE)) <= 0)
@@ -87,6 +88,7 @@ int main(int argc, char *argv[])
                     perror("read");
                     continue;
                 }
+                printf("udp %d\n", read_bytes);
 
                 if(tun0.sendMsg(buf, read_bytes) <= 0)
                 {
