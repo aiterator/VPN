@@ -49,16 +49,14 @@ void TunDecive::addRoute(const char *route)
     system(buf);
 }
 
-size_t TunDecive::readMsg(char *buf, int BUF_SIZE)
+ssize_t TunDecive::readMsg(char *buf, int BUF_SIZE)
 {
-    size_t read_bytes = read(fd, buf, BUF_SIZE);
-    return read_bytes;
+    return read(fd, buf, BUF_SIZE);
 }
 
-size_t TunDecive::sendMsg(char *buf, int len)
+ssize_t TunDecive::sendMsg(char *buf, int len)
 {
-    size_t write_bytes = write(fd, buf, len);
-    return write_bytes;
+    return write(fd, buf, len);
 }
 
 int TunDecive::getFd()

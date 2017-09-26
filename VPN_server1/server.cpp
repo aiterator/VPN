@@ -76,6 +76,7 @@ int main()
         perror("epoll_create");
         exit(errno);
     }
+
     int udp_socket_fd = udpServerInit();
     epollAdd(epollFd, udp_socket_fd, UDP_FD, EPOLLIN);
 
@@ -124,41 +125,13 @@ int main()
                 serverPort_Mp_clientIpPort[udp_client.sin_port] = ip_package.src_addr().to_string();
                 ip_package.src_addr(IPv4Address(IP_LOCAL));
 
-                cout << ip_package.src_addr().to_string() << " " << ip_package.dst_addr().to_string() << endl;
+                cout << ip_package.src_addr().to_string() << " " << ip_package.dst_addr().to_string() << "size:" << ip_package.size() << endl;
 
                 sender.send(ip_package);
             }
             else
             {
-                read_bytes = recvfrom(fd, buf, BUF_SIZE, 0, (struct sockaddr *)&udp_client, &clientLen);
-                if(read_bytes < 0)
-                {
-                    perror("recvfrom");
-                    continue;
-                }
 
-                IP ip_package;
-                try
-                {
-                    ip_package = RawPDU((uint8_t*)buf, read_bytes).to<IP>();
-                }
-                catch (...)
-                {
-                    continue;
-                }
-
-                TCP *tcp_package = ip_package.inner_pdu()->find_pdu<TCP>();
-                uint16_t port = tcp_package->dport();
-
-                string d_addr = serverPort_Mp_clientIpPort[port];
-                ip_package.dst_addr(IPv4Address(d_addr.data()));
-
-                WrapperUdp udp(d_addr.data(), port);
-                auto buf = ip_package.serialize();
-                if(udp.sentMsg((char *)buf.data(), buf.size()) <= 0)
-                    perror("udp.sendMsg");
-
-                printf("handle %d\n", buf.size());
             }
         }
     }

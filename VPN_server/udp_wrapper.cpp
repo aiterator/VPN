@@ -40,6 +40,19 @@ WrapperUdp::WrapperUdp(const char *ip, uint16_t port) {
     client.sin_family = AF_INET;
 }
 
+WrapperUdp::WrapperUdp(const uint32_t ip, uint16_t port)
+{
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
+        perror("socket");
+        exit(errno);
+    }
+
+    memset(&client, 0, sizeof(client));
+    client.sin_addr.s_addr = ip;
+    client.sin_port = port;
+    client.sin_family = AF_INET;
+}
+
 size_t WrapperUdp::sentMsg(const char* msg, int len)
 {
     return sendto(sockfd, msg, len, 0, (struct sockaddr *)&client, sizeof(client));

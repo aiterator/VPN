@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
 {
     TunDecive tun0;
     tun0.up();
-    tun0.addRoute("36.99.18.132");
+    tun0.addRoute("220.181.57.217");
 
     WrapperUdp udp(argv[1], argv[2]);
 
@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
                     perror("udp.sendMsg");
                     continue;
                 }
-           }
+            }
             else
             {
                 if((read_bytes = udp.readMsg(buf, BUF_SIZE)) <= 0)

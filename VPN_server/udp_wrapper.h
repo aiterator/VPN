@@ -19,6 +19,7 @@ class WrapperUdp
 public:
     WrapperUdp(const char* ip, const char* port);
     WrapperUdp(const char* ip, uint16_t port);
+    WrapperUdp(const uint32_t ip, uint16_t port);
 
     size_t sentMsg(const char* msg, int len);
     size_t sentMsg(std::string& msg);

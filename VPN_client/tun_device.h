@@ -20,8 +20,8 @@ public:
     void up();
     void down();
     void addRoute(const char* route);
-    size_t readMsg(char *buf, int BUF_SIZE);
-    size_t sendMsg(char *buf, int len);
+    ssize_t readMsg(char *buf, int BUF_SIZE);
+    ssize_t sendMsg(char *buf, int len);
 
     int getFd();
 
