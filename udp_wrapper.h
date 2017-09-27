@@ -27,7 +27,7 @@ public:
 
 private:
     int sockfd; //文件描述符；
-    struct sockaddr_in client, server;
+    struct sockaddr_in client;
 };
 
 #endif //VPN_UDP_WRAPPER_H

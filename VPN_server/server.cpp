@@ -21,6 +21,7 @@ using namespace Tins;
 const char IP_LOCAL[] = "115.159.146.17";
 const int UDP_SERVER_PORT = 35000;
 const int BUFF_SIZE = 100000;
+const uint16_t CLIENT_PORT = 35000;
 
 unordered_map<uint16_t , uint64_t> serverPort_mp_clientIpPort;
 unordered_map<uint64_t , uint16_t> clientIpPort_mp_serverPort;
@@ -75,15 +76,26 @@ void udpServer()
             continue;
         }
 
-        uint32_t src_ip = udp_client.sin_addr.s_addr;
-        uint16_t src_port = udp_client.sin_port;
+        uint32_t client_ip = udp_client.sin_addr.s_addr;
+        uint16_t client_port = 0;
+        switch(ip_package.protocol())
+        {
+            case 6:
+                client_port = ip_package.find_pdu<TCP>()->sport();
+                break;
+            case 17:
+                client_port = ip_package.find_pdu<UDP>()->sport();
+                break;
+            default:
+                break;
+        }
 
-        uint64_t src_ip_port = src_ip;
-        src_ip_port = (src_ip_port << 32) + src_port;
+        uint64_t client_ip_port = client_ip;
+        client_ip_port = (client_ip_port << 32) + client_port;
 
         uint16_t server_port;
-        if(clientIpPort_mp_serverPort.count(src_ip_port) > 0)
-            server_port = clientIpPort_mp_serverPort[src_ip_port];
+        if(clientIpPort_mp_serverPort.count(client_ip_port) > 0)
+            server_port = clientIpPort_mp_serverPort[client_ip_port];
         else
         {
             if(useless_port.empty())
@@ -95,22 +107,25 @@ void udpServer()
             server_port = useless_port.front();
             useless_port.pop_front();
 
-            clientIpPort_mp_serverPort[src_ip_port] = server_port;
-            serverPort_mp_clientIpPort[server_port] = src_ip_port;
+            clientIpPort_mp_serverPort[client_ip_port] = server_port;
+            serverPort_mp_clientIpPort[server_port] = client_ip_port;
         }
 
         ip_package.src_addr(IPv4Address(IP_LOCAL));
         switch(ip_package.protocol())
         {
             case 6:
-                ip_package.find_pdu<TCP>()->dport(server_port);
+                ip_package.find_pdu<TCP>()->sport(server_port);
                 break;
             case 17:
-                ip_package.find_pdu<UDP>()->dport(server_port);
+                ip_package.find_pdu<UDP>()->sport(server_port);
                 break;
             default:
                 break;
         }
+
+        cout << ip_package.src_addr().to_string() << " > " << ip_package.dst_addr().to_string() << " size:" << ip_package.size() << endl;
+
         sender.send(ip_package);
     }
 }
@@ -123,7 +138,8 @@ bool handle(PDU &some_pdu)
 
     uint16_t local_port = tcp.dport();
     uint64_t client_ip_port = serverPort_mp_clientIpPort[local_port];
-    uint32_t client_ip = client_ip_port >> 32;
+
+    uint32_t client_ip = (client_ip_port >> 32);
     uint16_t client_port = (client_ip_port & 0xffff);
 
     ip.dst_addr(IPv4Address(client_ip));
@@ -152,7 +168,7 @@ int main(int argc, char *argv[])
     thread udp_server_thread_id = thread(udpServer);
 
     SnifferConfiguration config;
-    config.set_filter("ip dst 115.159.146.17 and port 35001-39999");
+    config.set_filter("ip dst 115.159.146.17 and portrange 35001-39999");
     config.set_immediate_mode(true);
     Sniffer sniffer("eth0", config);
     sniffer.sniff_loop(handle);

@@ -42,6 +42,15 @@ void TunDecive::down()
     printf("tunDevice %s down\n", ifr.ifr_name);
 }
 
+void TunDecive::bindIp(const char *ip)
+{
+    char buf[207];
+    sprintf(buf, "ip addr add %s dev %s", ip, ifr.ifr_name);
+    system(buf);
+
+    printf("tunDevice %s add %s\n", ifr.ifr_name, ip);
+}
+
 void TunDecive::addRoute(const char *route)
 {
     char buf[207];

@@ -22,6 +22,7 @@ public:
 
     size_t sentMsg(const char* msg, int len);
     size_t sentMsg(std::string& msg);
+
     ssize_t readMsg(char* buf, int BUF_SIZE);
     int getFd();
 

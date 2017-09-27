@@ -20,13 +20,15 @@ public:
     void up();
     void down();
     void addRoute(const char* route);
+    void bindIp(const char * ip);
+
     ssize_t readMsg(char *buf, int BUF_SIZE);
     ssize_t sendMsg(char *buf, int len);
 
     int getFd();
 
 private:
-    struct ifreq ifr;
+    struct ifreq ifr; // tun's message;
     int fd; //描述符
 };
 

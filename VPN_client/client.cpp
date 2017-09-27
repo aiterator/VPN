@@ -4,8 +4,8 @@
 #include <iostream>
 #include <sys/epoll.h>
 #include <tins/tins.h>
-#include "tun_device.h"
-#include "udp_wrapper.h"
+#include "../tun_device.h"
+#include "../udp_wrapper.h"
 
 using namespace Tins;
 using namespace std;

@@ -52,8 +52,8 @@ size_t WrapperUdp::sentMsg(std::string& msg)
 
 ssize_t WrapperUdp::readMsg(char* buf, int BUF_SIZE)
 {
-    socklen_t server_length = sizeof(server);
-    ssize_t read_bytes = recvfrom(sockfd, buf, BUF_SIZE, 0, (struct sockaddr *)&server, &server_length);
+    socklen_t client_length = sizeof(client);
+    ssize_t read_bytes = recvfrom(sockfd, buf, BUF_SIZE, 0, (struct sockaddr *)&client, &client_length);
     return read_bytes;
 }
 
