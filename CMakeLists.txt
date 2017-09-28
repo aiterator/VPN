@@ -16,6 +16,7 @@ target_link_libraries(vpnServer1 tins pcap pthread)
 
 set(vpn_server2_SourceFile VPN_server2/server.cpp tun_device.cpp tun_device.h udp_wrapper.cpp udp_wrapper.h)
 add_executable(vpnServer2 ${vpn_server2_SourceFile})
+target_link_libraries(vpnServer2 tins pcap pthread)
 
 set(getopt_SourceFile Test_dir/getOpt.cpp)
 add_executable(getopt_SourceFile ${getopt_SourceFile})

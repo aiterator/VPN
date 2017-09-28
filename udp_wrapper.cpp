@@ -4,25 +4,6 @@
 
 #include "udp_wrapper.h"
 
-WrapperUdp::WrapperUdp(const char *ip, const char *port) {
-    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
-        perror("socket");
-        exit(errno);
-    }
-
-    memset(&client, 0, sizeof(client));
-    if (inet_aton(ip, &(client.sin_addr)) == -1) {
-        perror("inet_aton");
-        exit(errno);
-    }
-
-    uint16_t Port = 0;
-    for (int i = 0; port[i]; ++i)
-        Port = Port * 10 + port[i] - '0';
-
-    client.sin_port = htons(Port);
-    client.sin_family = AF_INET;
-}
 
 WrapperUdp::WrapperUdp(const char *ip, uint16_t port) {
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
@@ -38,6 +19,12 @@ WrapperUdp::WrapperUdp(const char *ip, uint16_t port) {
 
     client.sin_port = htons(port);
     client.sin_family = AF_INET;
+
+    if(bind(sockfd, (struct sockaddr *)&client, sizeof(client)) == -1)
+    {
+        perror("bind");
+        exit(errno);
+    }
 }
 
 size_t WrapperUdp::sentMsg(const char* msg, int len)

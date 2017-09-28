@@ -41,11 +41,16 @@ void epollAdd(int epollFd, int sockFd, uint32_t status)
 
 int main(int argc, char *argv[])
 {
+
+    for(uint16_t port = 35001; port < 40000; ++ port)
+        be_use_port.push_back(port);
+
     TunDecive tun0;
     tun0.bindIp("192.168.100.0/24");
     tun0.up();
     //tun0.addRoute(TUN0_IP);
 
+    LOCAL_IP_UINT32 = inet_addr(LOCAL_IP_STR);
     if(inet_aton(LOCAL_IP_STR, (in_addr*)&LOCAL_IP_UINT32) == 0)
     {
         perror("inet_aton(local)");
@@ -112,6 +117,8 @@ int main(int argc, char *argv[])
                         dst_port = 0;
                         break;
                 }
+
+                cout << "dst_ip:" << dst_ip << " " << "dst_port:" << dst_port << endl;
 
                 uint64_t dst_ip_port = dst_ip;
                 dst_ip_port = (dst_ip_port << 32) + dst_port;
@@ -184,6 +191,9 @@ int main(int argc, char *argv[])
                         dst_port = 0;
                         break;
                 }
+
+                cout << "src_ip:" << src_ip << " " << "src_port:" << src_port << endl;
+                cout << "dst_ip:" << dst_ip << " " << "dst_port" << dst_port << endl;
 
                 uint64_t src_ip_port = src_ip, dst_ip_port = dst_ip;
                 src_ip_port = (src_ip_port << 32) + src_port;

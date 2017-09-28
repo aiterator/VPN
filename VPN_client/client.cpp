@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
     tun0.up();
     tun0.addRoute("220.181.57.217");
 
-    WrapperUdp udp(argv[1], argv[2]);
+    WrapperUdp udp(argv[1], atoi(argv[2]));
 
     int epollFd;
     if((epollFd = epoll_create1(0)) == -1)
