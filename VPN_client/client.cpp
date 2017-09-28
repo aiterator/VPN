@@ -10,6 +10,12 @@
 using namespace Tins;
 using namespace std;
 
+
+const char LOCAL_IP_STR[] = "192.168.23.148";
+const uint16_t LOCAL_PORT = 35000;
+const char SERVER_IP_STR[] = "115.159.146.17";
+const uint16_t SERVER_PORT = 35000;
+
 const int TUN0 = 0;
 const int UDP0 = 1;
 const int EVENT_SIZE = 107;
@@ -42,7 +48,7 @@ int main(int argc, char *argv[])
     tun0.up();
     tun0.addRoute("220.181.57.217");
 
-    WrapperUdp udp(argv[1], atoi(argv[2]));
+    WrapperUdp udp(LOCAL_IP_STR, LOCAL_PORT, SERVER_IP_STR, SERVER_PORT);
 
     int epollFd;
     if((epollFd = epoll_create1(0)) == -1)

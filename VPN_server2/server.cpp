@@ -19,6 +19,7 @@ using namespace std;
 const char TUN0_IP[] = "192.168.100.100";
 const char LOCAL_IP_STR[] = "";
 const uint16_t UDP_SERVER_PORT = 35000;
+
 const int EVENT_SIZE = 7;
 const int BUF_SIZE = 10000;
 uint32_t LOCAL_IP_UINT32;
@@ -139,7 +140,7 @@ int main(int argc, char *argv[])
                 }
 
                 vector<uint8_t> ip_package_buf = ip_package.serialize();
-                if(udp.sentMsg((char *)ip_package_buf.data(), ip_package_buf.size()) <= 0)
+                if(udp.sentMsg((char *)ip_package_buf.data(), ip_package_buf.size(), IPv4Address(src_ip_port >> 32).to_string().data(), (src_ip_port & 0xffff)) <= 0)
                 {
                     perror("udp.sendMsg");
                     continue;
