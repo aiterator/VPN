@@ -5,7 +5,7 @@
 #include <sys/epoll.h>
 #include <tins/tins.h>
 #include "../tun_device.h"
-#include "../udp_wrapper.h"
+#include "udp_wrapper.h"
 
 using namespace Tins;
 using namespace std;
@@ -35,7 +35,7 @@ void epollAdd(int epollFd, int sockFd, int mk, uint32_t status)
     ev.events = status;
     ev.data.ptr = msg;
 
-    if(epoll_ctl(epollFd, EPOLL_CTL_ADD, sockFd, &ev) == - 1)
+    if(epoll_ctl(epollFd, EPOLL_CTL_ADD, sockFd, &ev) == -1)
     {
         perror("epoll_ctl");
         exit(errno);

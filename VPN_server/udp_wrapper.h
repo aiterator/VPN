@@ -17,13 +17,12 @@
 class WrapperUdp
 {
 public:
-    WrapperUdp(const char* ip, const char* port);
-    WrapperUdp(const char* ip, uint16_t port);
-    WrapperUdp(const uint32_t ip, uint16_t port);
+    WrapperUdp(const char* local_ip, uint16_t local_port);
 
     size_t sentMsg(const char* msg, int len);
-    size_t sentMsg(std::string& msg);
+    size_t sentMsg(const char* msg, int len, const char* server_ip, uint16_t server_port);
     ssize_t readMsg(char* buf, int BUF_SIZE);
+
     int getFd();
 
 private:
