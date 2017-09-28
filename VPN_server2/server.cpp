@@ -119,14 +119,19 @@ int main(int argc, char *argv[])
                         break;
                 }
 
-                cout << "dst_ip:" << dst_ip << " " << "dst_port:" << dst_port << endl;
-
                 uint64_t dst_ip_port = dst_ip;
                 dst_ip_port = (dst_ip_port << 32) + dst_port;
 
                 uint64_t src_ip_port = dstIpPort_mp_srcIpPort[dst_ip_port];
+                uint32_t src_ip = (src_ip_port >> 32);
+                uint16_t src_port = (src_ip_port & 0xffff);
 
-                ip_package.dst_addr(IPv4Address(src_ip_port >> 32));
+                cout << "tun0" << endl;
+                cout << "dst_ip:" << dst_ip << " " << "dst_port:" << dst_port << endl;
+                cout << "src_ip:" << src_ip << " " << "src_port:" << src_port << endl;
+
+                IPv4Address ipV4(src_ip);
+                ip_package.dst_addr(ipV4);
                 switch(ip_package.protocol())
                 {
                     case 6:
@@ -140,7 +145,7 @@ int main(int argc, char *argv[])
                 }
 
                 vector<uint8_t> ip_package_buf = ip_package.serialize();
-                if(udp.sentMsg((char *)ip_package_buf.data(), ip_package_buf.size(), IPv4Address(src_ip_port >> 32).to_string().data(), (src_ip_port & 0xffff)) <= 0)
+                if(udp.sentMsg((char *)ip_package_buf.data(), ip_package_buf.size(), ipV4.to_string().data(), src_port) <= 0)
                 {
                     perror("udp.sendMsg");
                     continue;
@@ -193,6 +198,7 @@ int main(int argc, char *argv[])
                         break;
                 }
 
+                cout << "udp0" << endl;
                 cout << "src_ip:" << src_ip << " " << "src_port:" << src_port << endl;
                 cout << "dst_ip:" << dst_ip << " " << "dst_port" << dst_port << endl;
 
