@@ -9,6 +9,7 @@
 #include <sys/epoll.h>
 #include <tins/tins.h>
 #include <unordered_map>
+#include <ctime>
 #include <list>
 #include "../tun_device.h"
 #include "udp_wrapper.h"
@@ -23,12 +24,8 @@ const uint16_t UDP_SERVER_PORT = 35000;
 const int EVENT_SIZE = 7;
 const int BUF_SIZE = 10000;
 
-
-unordered_map<uint64_t, uint16_t> srcIpPort_mp_localPort;
-unordered_map<uint64_t, sockaddr_in> localPort_mp_srcAddr;
-unordered_map<uint16_t, uint64_t> localPort_mp_clientIpPort;
-
-list<uint16_t> be_use_port;
+unordered_map<IPv4Address, pair<pair<uint32_t, sockaddr_in>, time_t>> localIp_mp_clientMsg;
+unordered_map<string, IPv4Address> client_mp_localIp;
 
 void epollAdd(int epollFd, int sockFd, uint32_t status)
 {
@@ -45,12 +42,13 @@ void epollAdd(int epollFd, int sockFd, uint32_t status)
 
 int main(int argc, char *argv[])
 {
-    for(uint16_t port = 35001; port < 40000; ++ port)
-        be_use_port.push_back(port);
-
     TunDecive tun0;
     tun0.bindIp("192.168.100.0/24");
     tun0.up();
+
+    IPv4Range ip_pool = IPv4Address("192.168.100.0") / 24;
+    for(IPv4Range::iterator it = ip_pool.begin(); it != ip_pool.end(); ++ it)
+        localIp_mp_clientMsg[*it] = make_pair(make_pair(0, sockaddr_in()), 0);
 
     WrapperUdp udp(UDP_SERVER_PORT);
 
@@ -92,44 +90,13 @@ int main(int argc, char *argv[])
                     continue;
                 }
 
-                uint16_t local_port;
-                switch(ip_package.protocol())
-                {
-                    case 6:
-                        local_port = ip_package.find_pdu<TCP>()->dport();
-                        break;
-                    case 17:
-                        local_port = ip_package.find_pdu<UDP>()->dport();
-                        break;
-                    default:
-                        local_port = 0;
-                        break;
-                }
-                sockaddr_in src_addr = localPort_mp_srcAddr[local_port];
-                uint64_t client_ip_port = localPort_mp_clientIpPort[local_port];
+                IPv4Address local_ip = ip_package.dst_addr();
+                pair<pair<uint32_t, sockaddr_in>, time_t> &clientMsg = localIp_mp_clientMsg[local_ip];
+                clientMsg.second = time(NULL);
 
-                uint32_t client_ip = (client_ip_port >> 32);
-                uint16_t client_port = (client_ip_port & 0xffff);
-
-                cout << "tun0" << endl;
-                cout << "src_ip:" << src_addr.sin_addr.s_addr << " " << "src_port:" << src_addr.sin_port << endl;
-                cout << "client_ip:" << client_ip << " " << "client_port:" << client_port << endl;
-
-                ip_package.dst_addr(IPv4Address(client_ip));
-                switch(ip_package.protocol())
-                {
-                    case 6:
-                        ip_package.find_pdu<TCP>()->dport(client_port);
-                        break;
-                    case 17:
-                        ip_package.find_pdu<UDP>()->dport(client_port);
-                        break;
-                    default:
-                        break;
-                }
-
+                ip_package.dst_addr(IPv4Address(clientMsg.first.first));
                 vector<uint8_t> ip_package_buf = ip_package.serialize();
-                if(udp.sentMsg((char *)ip_package_buf.data(), ip_package_buf.size(), src_addr) <= 0)
+                if(udp.sentMsg((char *)ip_package_buf.data(), ip_package_buf.size(), clientMsg.first.second) <= 0)
                 {
                     perror("udp.sendMsg");
                     continue;
@@ -154,76 +121,46 @@ int main(int argc, char *argv[])
                 }
 
                 sockaddr_in src_addr = udp.getSockaddr_in();
-                uint32_t src_ip = src_addr.sin_addr.s_addr;
-                uint16_t src_port = src_addr.sin_port;
-
-                uint32_t client_ip;
-                if((client_ip = inet_addr(ip_package.src_addr().to_string().data())) == INADDR_NONE)
+                uint32_t client_ip_uint32;
+                if((client_ip_uint32 = inet_addr(ip_package.src_addr().to_string().data())) == INADDR_NONE)
                 {
                     perror("inet_addr");
                     exit(errno);
                 }
 
-                uint16_t client_port;
-                switch (ip_package.protocol())
+                string client((char*)&src_addr, sizeof(src_addr));
+                client += string((char *)&client_ip_uint32, sizeof(client_ip_uint32));
+
+                //cout << "udp0" << endl;
+                //cout << "src_ip:" << src_ip << " " << "src_port:" << src_port << endl;
+                //cout << "client_ip:" << client_ip << " " << "client_port;" << client_port << endl;
+
+                IPv4Address local_ip;
+                if(client_mp_localIp.count(client) > 0)
                 {
-                    case 6:
-                        client_port = ip_package.find_pdu<TCP>()->sport();
-                        break;
-                    case 17:
-                        client_port = ip_package.find_pdu<UDP>()->sport();
-                        break;
-                    default:
-                        client_port = 0;
-                        break;
+                    local_ip = client_mp_localIp[client];
+                    pair<pair<uint32_t, sockaddr_in>, time_t> &tmp = localIp_mp_clientMsg[local_ip];
+                    tmp.first.second = src_addr, tmp.second = time(NULL);
                 }
-
-                cout << "udp0" << endl;
-                cout << "src_ip:" << src_ip << " " << "src_port:" << src_port << endl;
-                cout << "client_ip:" << client_ip << " " << "client_port;" << client_port << endl;
-
-                if(client_port == 0)
-                {
-                    cout << "PORT = 0!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
-                    continue;
-                }
-
-                uint64_t src_ip_port = src_ip, client_ip_port = client_ip;
-                src_ip_port = (src_ip_port << 32) + src_port;
-                client_ip_port = (client_ip_port << 32) + client_port;
-
-                uint64_t local_port;
-                if(srcIpPort_mp_localPort.count(src_ip_port) > 0)
-                    local_port = srcIpPort_mp_localPort[src_ip_port];
                 else
                 {
-                    if(be_use_port.empty())
+                    time_t now = time(NULL);
+                    for(IPv4Range::iterator it = ip_pool.begin(); it != ip_pool.end(); ++ it)
                     {
-                        printf("No Port for use\n");
-                        continue;
+                        pair<pair<uint32_t, sockaddr_in>, time_t> &tmp = localIp_mp_clientMsg[*it];
+                        if(tmp.first.first == 0 || (now - tmp.second) > 300)
+                        {
+                            local_ip = *it;
+                            client_mp_localIp[client] = local_ip;
+
+                            tmp.first.first = client_ip_uint32, tmp.first.second = src_addr;
+                            tmp.second = now;
+                            break;
+                        }
                     }
-
-                    local_port = be_use_port.front();
-                    be_use_port.pop_front();
-
-                    srcIpPort_mp_localPort[src_ip_port] = local_port;
-                }
-                localPort_mp_srcAddr[local_port] = src_addr;
-                localPort_mp_clientIpPort[local_port] = client_ip_port;
-
-                ip_package.src_addr(IPv4Address(TUN0_IP));
-                switch(ip_package.protocol())
-                {
-                    case 6:
-                        ip_package.find_pdu<TCP>()->sport(local_port);
-                        break;
-                    case 17:
-                        ip_package.find_pdu<UDP>()->sport(local_port);
-                        break;
-                    default:
-                        break;
                 }
 
+                ip_package.src_addr(local_ip);
                 vector<uint8_t > ip_package_buf = ip_package.serialize();
                 if(tun0.sendMsg((char *)ip_package_buf.data(), ip_package_buf.size()) <= 0)
                 {
