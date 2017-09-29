@@ -129,10 +129,6 @@ int main(int argc, char *argv[])
                 string client((char*)&src_addr, sizeof(src_addr));
                 client += string((char *)&client_ip_uint32, sizeof(client_ip_uint32));
 
-                //cout << "udp0" << endl;
-                //cout << "src_ip:" << src_ip << " " << "src_port:" << src_port << endl;
-                //cout << "client_ip:" << client_ip << " " << "client_port;" << client_port << endl;
-
                 IPv4Address local_ip;
                 if(client_mp_localIp.count(client) > 0)
                 {

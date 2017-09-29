@@ -35,10 +35,6 @@ int main(int argc, char *argv[])
     TunDecive tun0;
     tun0.up();
 
-    //system("route add 115.159.146.17 dev ens33");
-    tun0.addRoute("220.181.57.217");
-
-
     WrapperUdp udp;
     udp.setServerIpPort(SERVER_IP_STR, SERVER_PORT);
 
@@ -69,7 +65,7 @@ int main(int argc, char *argv[])
                     perror("tun0.readMsg");
                     continue;
                 }
-                printf("tun0 %d\n", read_bytes);
+                //printf("tun0 %d\n", read_bytes);
 
                 if(udp.sentMsg(buf, read_bytes) <= 0)
                 {
@@ -84,7 +80,7 @@ int main(int argc, char *argv[])
                     perror("read");
                     continue;
                 }
-                printf("udp %d\n", read_bytes);
+                //printf("udp %d\n", read_bytes);
 
                 if(tun0.sendMsg(buf, read_bytes) <= 0)
                 {
