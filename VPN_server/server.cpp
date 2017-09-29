@@ -17,11 +17,9 @@
 using namespace Tins;
 using namespace std;
 
-const char TUN0_IP[] = "192.168.100.100";
-const char LOCAL_IP_STR[] = "";
 const uint16_t UDP_SERVER_PORT = 35000;
 
-const int EVENT_SIZE = 7;
+const int EVENT_SIZE = 100;
 const int BUF_SIZE = 10000;
 
 unordered_map<IPv4Address, pair<pair<uint32_t, sockaddr_in>, time_t>> localIp_mp_clientMsg;
