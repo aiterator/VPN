@@ -16,7 +16,7 @@
 class TunDecive
 {
 public:
-    explicit TunDecive();
+    TunDecive();
     void up();
     void down();
     void addRoute(const char* route);

@@ -27,29 +27,20 @@ WrapperUdp::WrapperUdp(const char* local_ip, uint16_t local_port)
     }
 }
 
-size_t WrapperUdp::sentMsg(const char* msg, int len)
+ssize_t WrapperUdp::sentMsg(const char* msg, int len, const sockaddr_in &Client)
 {
-    return sendto(sockfd, msg, len, 0, (struct sockaddr *)&server, sizeof(server));
-}
-
-size_t WrapperUdp::sentMsg(const char* msg, int len, const char* server_ip, uint16_t server_port)
-{
-    memset(&server, 0, sizeof(server));
-    if (inet_aton(server_ip, &(server.sin_addr)) == -1)
-    {
-        perror("inet_aton");
-        exit(errno);
-    }
-    server.sin_port = htons(server_port);
-    server.sin_family = AF_INET;
-    return sendto(sockfd, msg, len, 0, (struct sockaddr *)&server, sizeof(server));
+    return sendto(sockfd, msg, len, 0, (struct sockaddr *)&Client, sizeof(Client));
 }
 
 ssize_t WrapperUdp::readMsg(char* buf, int BUF_SIZE)
 {
     socklen_t client_length = sizeof(client);
-    ssize_t read_bytes = recvfrom(sockfd, buf, BUF_SIZE, 0, (struct sockaddr *)&client, &client_length);
-    return read_bytes;
+    return recvfrom(sockfd, buf, BUF_SIZE, 0, (struct sockaddr *)&client, &client_length);
+}
+
+sockaddr_in WrapperUdp::getSockaddr_in()
+{
+    return client;
 }
 
 int WrapperUdp::getFd()

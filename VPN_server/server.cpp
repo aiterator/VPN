@@ -24,7 +24,9 @@ const int EVENT_SIZE = 7;
 const int BUF_SIZE = 10000;
 uint32_t LOCAL_IP_UINT32;
 
-unordered_map<uint64_t, uint64_t> dstIpPort_mp_srcIpPort, srcIpPort_mp_localIpPort;
+unordered_map<uint64_t, uint16_t> srcIpPort_mp_localPort;
+unordered_map<uint64_t, sockaddr_in> localPort_mp_srcAddr;
+
 list<uint16_t> be_use_port;
 
 void epollAdd(int epollFd, int sockFd, uint32_t status)
@@ -42,7 +44,6 @@ void epollAdd(int epollFd, int sockFd, uint32_t status)
 
 int main(int argc, char *argv[])
 {
-
     for(uint16_t port = 35001; port < 40000; ++ port)
         be_use_port.push_back(port);
 
@@ -97,54 +98,42 @@ int main(int argc, char *argv[])
                     continue;
                 }
 
-                uint32_t dst_ip;
-                if(inet_aton(ip_package.src_addr().to_string().data(), (in_addr*)&dst_ip) == 0)
-                {
-                    perror("inet_aton(src)");
-                    continue;
-                }
-
-                uint16_t dst_port;
+                uint16_t local_port;
                 switch(ip_package.protocol())
                 {
                     case 6:
-                        dst_port = ip_package.find_pdu<TCP>()->sport();
+                        local_port = ip_package.find_pdu<TCP>()->dport();
                         break;
                     case 17:
-                        dst_port = ip_package.find_pdu<UDP>()->sport();
+                        local_port = ip_package.find_pdu<UDP>()->dport();
                         break;
                     default:
-                        dst_port = 0;
+                        local_port = 0;
                         break;
                 }
+                sockaddr_in client_addr = localPort_mp_srcAddr[local_port];
 
-                uint64_t dst_ip_port = dst_ip;
-                dst_ip_port = (dst_ip_port << 32) + dst_port;
-
-                uint64_t src_ip_port = dstIpPort_mp_srcIpPort[dst_ip_port];
-                uint32_t src_ip = (src_ip_port >> 32);
-                uint16_t src_port = (src_ip_port & 0xffff);
+                uint32_t src_ip = client_addr.sin_addr.s_addr;
+                uint16_t src_port = client_addr.sin_port;
 
                 cout << "tun0" << endl;
-                cout << "dst_ip:" << dst_ip << " " << "dst_port:" << dst_port << endl;
                 cout << "src_ip:" << src_ip << " " << "src_port:" << src_port << endl;
 
-                IPv4Address ipV4(src_ip);
-                ip_package.dst_addr(ipV4);
+                ip_package.dst_addr(IPv4Address(src_ip));
                 switch(ip_package.protocol())
                 {
                     case 6:
-                        ip_package.find_pdu<TCP>()->dport(src_ip_port & 0xffff);
+                        ip_package.find_pdu<TCP>()->dport(src_port);
                         break;
                     case 17:
-                        ip_package.find_pdu<UDP>()->dport(src_ip_port & 0xffff);
+                        ip_package.find_pdu<UDP>()->dport(src_port);
                         break;
                     default:
                         break;
                 }
 
                 vector<uint8_t> ip_package_buf = ip_package.serialize();
-                if(udp.sentMsg((char *)ip_package_buf.data(), ip_package_buf.size(), ipV4.to_string().data(), src_port) <= 0)
+                if(udp.sentMsg((char *)ip_package_buf.data(), ip_package_buf.size(), client_addr) <= 0)
                 {
                     perror("udp.sendMsg");
                     continue;
@@ -168,46 +157,21 @@ int main(int argc, char *argv[])
                     continue;
                 }
 
-                uint32_t src_ip, dst_ip;
-                if(inet_aton(ip_package.src_addr().to_string().data(), (in_addr*)&src_ip) == 0)
-                {
-                    perror("inet_aton(src)");
-                    continue;
-                }
-                if(inet_aton(ip_package.dst_addr().to_string().data(), (in_addr*)&dst_ip) == 0)
-                {
-                    perror("inet_aton(dst)");
-                    continue;
-                }
 
-                uint16_t src_port, dst_port;
-                switch(ip_package.protocol())
-                {
-                    case 6:
-                        src_port = ip_package.find_pdu<TCP>()->sport();
-                        dst_port = ip_package.find_pdu<TCP>()->dport();
-                        break;
-                    case 17:
-                        src_port = ip_package.find_pdu<UDP>()->sport();
-                        dst_port = ip_package.find_pdu<UDP>()->dport();
-                        break;
-                    default:
-                        src_port = 0;
-                        dst_port = 0;
-                        break;
-                }
+                sockaddr_in client_addr = udp.getSockaddr_in();
+
+                uint32_t src_ip = client_addr.sin_addr.s_addr;
+                uint16_t src_port = client_addr.sin_port;
 
                 cout << "udp0" << endl;
                 cout << "src_ip:" << src_ip << " " << "src_port:" << src_port << endl;
-                cout << "dst_ip:" << dst_ip << " " << "dst_port" << dst_port << endl;
 
-                uint64_t src_ip_port = src_ip, dst_ip_port = dst_ip;
+                uint64_t src_ip_port = src_ip;
                 src_ip_port = (src_ip_port << 32) + src_port;
-                dst_ip_port = (dst_ip_port << 32) + dst_port;
 
-                uint64_t local_ip_port;
-                if(srcIpPort_mp_localIpPort.count(src_ip_port) > 0)
-                    local_ip_port = srcIpPort_mp_localIpPort[src_ip_port];
+                uint64_t local_port;
+                if(srcIpPort_mp_localPort.count(src_ip_port) > 0)
+                    local_port = srcIpPort_mp_localPort[src_ip_port];
                 else
                 {
                     if(be_use_port.empty())
@@ -216,28 +180,21 @@ int main(int argc, char *argv[])
                         continue;
                     }
 
-                    uint16_t local_port = 0;
-                    if(src_port != 0)
-                    {
-                        local_port = be_use_port.front();
-                        be_use_port.pop_front();
-                    }
+                    local_port = be_use_port.front();
+                    be_use_port.pop_front();
 
-                    local_ip_port = LOCAL_IP_UINT32;
-                    local_ip_port = (local_ip_port << 32) + local_port;
-
-                    srcIpPort_mp_localIpPort[src_ip_port] = local_ip_port;
+                    srcIpPort_mp_localPort[src_ip_port] = local_port;
                 }
-                dstIpPort_mp_srcIpPort[dst_ip_port] = src_ip_port;
+                localPort_mp_srcAddr[local_port] = client_addr;
 
                 ip_package.src_addr(IPv4Address(TUN0_IP));
                 switch(ip_package.protocol())
                 {
                     case 6:
-                        ip_package.find_pdu<TCP>()->sport((local_ip_port & 0xffff));
+                        ip_package.find_pdu<TCP>()->sport(local_port);
                         break;
                     case 17:
-                        ip_package.find_pdu<UDP>()->sport((local_ip_port & 0xffff));
+                        ip_package.find_pdu<UDP>()->sport(local_port);
                         break;
                     default:
                         break;
