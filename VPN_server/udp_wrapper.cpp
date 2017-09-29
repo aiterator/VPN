@@ -4,7 +4,7 @@
 
 #include "udp_wrapper.h"
 
-WrapperUdp::WrapperUdp(const char* local_ip, uint16_t local_port)
+WrapperUdp::WrapperUdp(uint16_t local_port)
 {
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
     {
@@ -13,13 +13,10 @@ WrapperUdp::WrapperUdp(const char* local_ip, uint16_t local_port)
     }
 
     memset(&client, 0, sizeof(client));
-    if (inet_aton(local_ip, &(client.sin_addr)) == -1)
-    {
-        perror("inet_aton");
-        exit(errno);
-    }
     client.sin_port = htons(local_port);
     client.sin_family = AF_INET;
+    client.sin_addr.s_addr = htonl(INADDR_ANY);
+
     if(bind(sockfd, (struct sockaddr *)&client, sizeof(client)) == -1)
     {
         perror("bind");

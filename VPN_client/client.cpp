@@ -10,30 +10,18 @@
 using namespace Tins;
 using namespace std;
 
-
-const char LOCAL_IP_STR[] = "192.168.23.148";
-const uint16_t LOCAL_PORT = 35000;
-const char SERVER_IP_STR[] = "115.159.146.17";
+const char SERVER_IP_STR[] = "";
 const uint16_t SERVER_PORT = 35000;
 
-const int TUN0 = 0;
-const int UDP0 = 1;
 const int EVENT_SIZE = 107;
 const int BUF_SIZE = 100000;
 
-struct markMsg
+void epollAdd(int epollFd, int sockFd, uint32_t status)
 {
-    markMsg(int fd, int mk) : fd(fd), mk(mk){}
-    int fd, mk;
-};
-
-void epollAdd(int epollFd, int sockFd, int mk, uint32_t status)
-{
-    struct markMsg *msg = new markMsg(sockFd, mk);
     struct epoll_event ev;
     memset(&ev, 0, sizeof(ev));
     ev.events = status;
-    ev.data.ptr = msg;
+    ev.data.fd = sockFd;
 
     if(epoll_ctl(epollFd, EPOLL_CTL_ADD, sockFd, &ev) == -1)
     {
@@ -46,9 +34,13 @@ int main(int argc, char *argv[])
 {
     TunDecive tun0;
     tun0.up();
+
+    //system("route add 115.159.146.17 dev ens33");
     tun0.addRoute("220.181.57.217");
 
-    WrapperUdp udp(LOCAL_IP_STR, LOCAL_PORT, SERVER_IP_STR, SERVER_PORT);
+
+    WrapperUdp udp;
+    udp.setServerIpPort(SERVER_IP_STR, SERVER_PORT);
 
     int epollFd;
     if((epollFd = epoll_create1(0)) == -1)
@@ -57,8 +49,8 @@ int main(int argc, char *argv[])
         exit(errno);
     }
 
-    epollAdd(epollFd, tun0.getFd(), TUN0, EPOLLIN);
-    epollAdd(epollFd, udp.getFd(), UDP0, EPOLLIN);
+    epollAdd(epollFd, tun0.getFd(), EPOLLIN);
+    epollAdd(epollFd, udp.getFd(), EPOLLIN);
 
     struct epoll_event event[EVENT_SIZE];
     char buf[BUF_SIZE];
@@ -70,9 +62,7 @@ int main(int argc, char *argv[])
 
         for(int i = 0; i < size; ++ i)
         {
-            int mk = ((struct markMsg * )event[i].data.ptr)->mk;
-            int fd = ((struct markMsg * )event[i].data.ptr)->fd;
-            if(mk == TUN0)
+            if(event[i].data.fd == tun0.getFd())
             {
                 if((read_bytes = tun0.readMsg(buf, BUF_SIZE)) <= 0)
                 {

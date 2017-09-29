@@ -22,7 +22,7 @@ const uint16_t UDP_SERVER_PORT = 35000;
 
 const int EVENT_SIZE = 7;
 const int BUF_SIZE = 10000;
-uint32_t LOCAL_IP_UINT32;
+
 
 unordered_map<uint64_t, uint16_t> srcIpPort_mp_localPort;
 unordered_map<uint64_t, sockaddr_in> localPort_mp_srcAddr;
@@ -52,14 +52,7 @@ int main(int argc, char *argv[])
     tun0.bindIp("192.168.100.0/24");
     tun0.up();
 
-    LOCAL_IP_UINT32 = inet_addr(LOCAL_IP_STR);
-    if(inet_aton(LOCAL_IP_STR, (in_addr*)&LOCAL_IP_UINT32) == 0)
-    {
-        perror("inet_aton(local)");
-        exit(errno);
-    }
-
-    WrapperUdp udp(LOCAL_IP_STR, UDP_SERVER_PORT);
+    WrapperUdp udp(UDP_SERVER_PORT);
 
     int epollFd;
     if((epollFd = epoll_create1(0)) == -1)

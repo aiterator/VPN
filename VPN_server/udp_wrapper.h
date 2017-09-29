@@ -18,7 +18,7 @@
 class WrapperUdp
 {
 public:
-    WrapperUdp(const char* local_ip, uint16_t local_port);
+    WrapperUdp(uint16_t local_port);
 
     ssize_t sentMsg(const char* msg, int len, const sockaddr_in &Client);
     ssize_t readMsg(char* buf, int BUF_SIZE);
