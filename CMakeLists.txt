@@ -10,6 +10,3 @@ target_link_libraries(vpnClient tins pcap pthread)
 set(vpn_server_SourceFile VPN_server/server.cpp VPN_server/udp_wrapper.cpp VPN_server/udp_wrapper.h tun_device.cpp tun_device.h)
 add_executable(vpnServer ${vpn_server_SourceFile})
 target_link_libraries(vpnServer tins pcap pthread)
-
-set(getopt_SourceFile Test_dir/getOpt.cpp)
-add_executable(getopt_SourceFile ${getopt_SourceFile})
