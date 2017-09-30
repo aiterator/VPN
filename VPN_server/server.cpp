@@ -1,8 +1,4 @@
 //
-// Created by zy on 17-9-27.
-//
-
-//
 // Created by zy on 9/13/17.
 //
 #include <iostream>
